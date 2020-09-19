@@ -1,8 +1,9 @@
 # FoundryVTT Module
 
-Bugs:
-- Overhead tiles should sync updates of underlying tile transforms
-- Implement flag states for syncing users
+Issues:
+- A) Pixi - Overhead tiles should sync updates of underlying tile transforms
+
+- Toggle visibility of tile should toggle visibility of roof
 
 Features:
 - Player tokens should optionally automatically reveal when moving under roofs

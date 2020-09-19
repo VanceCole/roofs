@@ -21,8 +21,12 @@ Hooks.once('canvasInit', () => {
   canvas.roofs = canvas.stage.addChildAt(new RoofsLayer(), layerct);
 });
 
-Hooks.on('canvasInit', () => {
+Hooks.on('canvasReady', () => {
   canvas.roofs.init();
+});
+
+Hooks.on('updateScene', (scene, data) => {
+  canvas.roofs._updateScene(scene, data);
 });
 
 Hooks.on('renderTileHUD', extendTileHUD);
@@ -36,9 +40,7 @@ Hooks.on('renderTileHUD', extendTileHUD);
  * @param {Object} data   data prop of tile
  */
 function extendTileHUD(hud, html, data) {
-  console.log(hud);
   // Reference to the sprite of the tile
-  const sprite = hud.object.tile.children[0];
   const left = html.find('.col.left');
   const myHtml = $(`
   <div class="control-icon send-to-roofs">
@@ -54,11 +56,11 @@ function extendTileHUD(hud, html, data) {
   left.append(myHtml);
   html.find('.send-to-roofs').click(async () => {
     // Add flag to persist alpha state
-    canvas.roofs.receiveTile(hud.object, data, sprite);
+    canvas.roofs.receiveTile(hud.object, data);
   });
   html.find('.send-to-tiles').click(() => {
     // Add flag to persist alpha state
-    canvas.roofs.releaseTile(hud.object, data, sprite);
+    canvas.roofs.releaseTile(hud.object, data);
   });
   html.find('.roofs-config').click(() => {
 
