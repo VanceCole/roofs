@@ -2,7 +2,10 @@ import RoofsLayer from './RoofsLayer.js';
 import { log } from './helpers.js';
 
 Hooks.once('init', async () => {
-  CONFIG.roofs = {};
+  CONFIG.roofs = {
+    debug: true,
+  };
+  RoofsLayer._patchDrag();
   log('Initializing', true);
 });
 
@@ -10,15 +13,17 @@ Hooks.once('ready', async () => {
   log('Hello');
 });
 
+Hooks.on('deleteTile', RoofsLayer.deleteTile);
+
 Hooks.once('canvasInit', () => {
   // Add RoofsLayer to canvas
   let layerct;
-
   // eslint-disable-next-line no-restricted-syntax
   for (const [k, v] of Object.entries(canvas.stage.children)) {
     if (v.constructor.name === 'LightingLayer') layerct = k;
   }
   canvas.roofs = canvas.stage.addChildAt(new RoofsLayer(), layerct);
+  canvas.app.ticker.add(RoofsLayer.tick);
 });
 
 Hooks.on('canvasReady', () => {
@@ -56,11 +61,11 @@ function extendTileHUD(hud, html, data) {
   left.append(myHtml);
   html.find('.send-to-roofs').click(async () => {
     // Add flag to persist alpha state
-    canvas.roofs.receiveTile(hud.object, data);
+    RoofsLayer.receiveTile(hud.object, data);
   });
   html.find('.send-to-tiles').click(() => {
     // Add flag to persist alpha state
-    canvas.roofs.releaseTile(hud.object, data);
+    RoofsLayer.releaseTile(hud.object, data);
   });
   html.find('.roofs-config').click(() => {
 

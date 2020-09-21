@@ -7,15 +7,33 @@ export default class RoofsLayer extends CanvasLayer {
 
     const active = canvas.scene.getFlag('roofs', 'active');
     if (!active) return;
+
+    /**
+     * Load any existing tracked roofs
+     */
     // eslint-disable-next-line no-restricted-syntax
-    Object.keys(active).forEach(k => {
-      console.log(k);
+    Object.keys(active).forEach((k) => {
       const tile = canvas.tiles.get(k);
-      console.log(tile);
       if (tile) this.createRoof(tile);
     });
   }
 
+  static tick() {
+    const containers = canvas?.roofs?.containers;
+    if (containers === undefined) return;
+    const keys = Object.keys(containers);
+    if (!keys.length) return;
+    keys.forEach((k) => {
+      const tile = canvas.tiles.get(k);
+      const { container, sprite } = containers[k];
+      RoofsLayer.setTransform(tile, container, sprite);
+    });
+  }
+
+  /**
+   * Adds tile to tracked roofs
+   * @param {Object} tile
+   */
   createRoof(tile) {
     const id = tile.data._id;
     log(`Creating roof for ${id}`);
@@ -23,16 +41,23 @@ export default class RoofsLayer extends CanvasLayer {
     this.containers[id] = {};
     const container = new PIXI.Container();
     this.containers[id].container = container;
-    container.x = tile.x;
-    container.y = tile.y;
-    const roofSprite = PIXI.Sprite.from(tile.data.img);
 
-    // Add stuff to parents
-    container.addChild(roofSprite);
+    // Make new sprite
+    const sprite = PIXI.Sprite.from(tile.data.img);
+    this.containers[id].sprite = sprite;
+
+    // Add objects to parents
+    container.addChild(sprite);
     this.addChild(container);
-    RoofsLayer.setTransform(tile, roofSprite);
+
+    // Update transforms
+    RoofsLayer.setTransform(tile, container, sprite);
   }
 
+  /**
+   * Remove a tracked roof
+   * @param {String} id The tile ID
+   */
   destroyRoof(id) {
     // destroy container
     this.containers[id].container.destroy();
@@ -40,16 +65,32 @@ export default class RoofsLayer extends CanvasLayer {
     delete this.containers[id];
   }
 
+  static deleteTile(scene, data) {
+    if (!canvas.roofs.containers[data._id]) return;
+    canvas.roofs.destroyRoof(data._id);
+  }
+
+  _updateTile(scene, data) {}
+
+  /**
+   * React to change in flags
+   * @param {Object} scene scene entity
+   * @param {Object} data  data that was changed
+   */
   _updateScene(scene, data) {
     // Check if update applies to current viewed scene
     if (!scene._view) return;
-    // React to visibility change
+    // React to change in actively tracked roofs
     if (!hasProperty(data, 'flags.roofs.active')) return;
+
+    // For each changed roof
     Object.keys(data.flags.roofs.active).forEach((r) => {
+      // Check if roof removed
       if (r.startsWith('-=')) {
         const id = r.substr(2);
         this.destroyRoof(id);
       }
+      // Otherwise, add new roof
       else {
         const id = r;
         const tile = canvas.tiles.get(id);
@@ -58,18 +99,25 @@ export default class RoofsLayer extends CanvasLayer {
     });
   }
 
-    // // Add roof to active containers
-    // this.createRoof(tile);
-
-  static setTransform(tile, roofSprite) {
-    const sprite = tile.tile.children[0];
-    // Make new sprite
-    roofSprite.anchor.set(0.5);
-    roofSprite.width = sprite.width;
-    roofSprite.height = sprite.height;
-    roofSprite.x = sprite.x;
-    roofSprite.y = sprite.y;
-    roofSprite.angle = sprite.angle;
+  /**
+   * Sync transforms between a given tile entity and sprite
+   * @param {Object} tile      (src) The Tile entity to update from
+   * @param {Object} container (dest) The container holding the sprite
+   * @param {Object} roof      (dest) PIXI.sprite to update
+   */
+  static setTransform(tile, container, sprite) {
+    if (!tile || !sprite || !container?.transform) return;
+    const src = tile.tile.children[0];
+    // Update container transform
+    container.x = tile.x;
+    container.y = tile.y;
+    // Update sprite transform
+    sprite.anchor.set(0.5);
+    sprite.width = src.width;
+    sprite.height = src.height;
+    sprite.x = src.x;
+    sprite.y = src.y;
+    sprite.angle = src.angle;
   }
 
   /**
@@ -77,10 +125,9 @@ export default class RoofsLayer extends CanvasLayer {
    * @param {Object} tile   instance of Tile
    * @param {Object} data   Tile.data
    */
-  receiveTile(tile) {
-    console.log('receiving tile');
-
+  static receiveTile(tile) {
     const id = tile.data._id;
+    log(`Releasing tile ${id}`);
     // Set flag that this is a roof now
     canvas.scene.setFlag('roofs', `active.${id}`, {});
   }
@@ -90,12 +137,57 @@ export default class RoofsLayer extends CanvasLayer {
    * @param {Object} tile   instance of Tile
    * @param {Object} data   Tile.data
    */
-  async releaseTile(tile, data) {
-    console.log('releasing tile');
-
+  static releaseTile(tile) {
     const id = tile.data._id;
-
-    // Atro method actually
+    log(`Releasing tile ${id}`);
     canvas.scene.setFlag('roofs', `active.-=${id}`, null);
+  }
+
+  static hide(targets) {
+    const tgs = targets.map((t) => t.id);
+    const containers = canvas?.roofs?.containers;
+    if (containers === undefined) return;
+    const keys = Object.keys(containers).filter((k) => tgs.includes(k));
+    if (!keys.length) return;
+    keys.forEach((k) => {
+      containers[k].sprite.visible = false;
+    });
+  }
+
+  static show(targets) {
+    const tgs = targets.map((t) => t.id);
+    const containers = canvas?.roofs?.containers;
+    if (containers === undefined) return;
+    const keys = Object.keys(containers).filter((k) => tgs.includes(k));
+    if (!keys.length) return;
+    keys.forEach((k) => {
+      containers[k].sprite.visible = true;
+    });
+  }
+
+  static _patchDrag() {
+    // eslint-disable-next-line camelcase
+    const og_onDragLeftStart = Tile.prototype._onDragLeftStart;
+    Tile.prototype._onDragLeftStart = function _onDragLeftStart(event) {
+      const targets = this.layer.options.controllableObjects ? this.layer.controlled : [this];
+      RoofsLayer.hide(targets);
+      og_onDragLeftStart.call(this, event);
+    };
+
+    // eslint-disable-next-line camelcase
+    const og_onDragLeftDrop = Tile.prototype._onDragLeftDrop;
+    Tile.prototype._onDragLeftDrop = function _onDragLeftDrop(event) {
+      const targets = this.layer.options.controllableObjects ? this.layer.controlled : [this];
+      RoofsLayer.show(targets);
+      og_onDragLeftDrop.call(this, event);
+    };
+
+    // eslint-disable-next-line camelcase
+    const og_onDragLeftCancel = Tile.prototype._onDragLeftCancel;
+    Tile.prototype._onDragLeftCancel = function _onDragLeftCancel(event) {
+      const targets = this.layer.options.controllableObjects ? this.layer.controlled : [this];
+      RoofsLayer.show(targets);
+      og_onDragLeftCancel.call(this, event);
+    };
   }
 }

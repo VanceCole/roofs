@@ -1,12 +1,13 @@
 # FoundryVTT Module
 
 Issues:
-- A) Pixi - Overhead tiles should sync updates of underlying tile transforms
-
-- Toggle visibility of tile should toggle visibility of roof
-
-Features:
-- Player tokens should optionally automatically reveal when moving under roofs
+- C) Toggle visibility of tile should toggle visibility of roof
+- D) zIndex should work
+- E) Copy and paste should work
+- F) Animated tiles should start playing when moved to roof
+- H) Icons are ugly
 
 ## Changelog
 
+Hard:
+- G) Player tokens should automatically reveal when moving under roofs
