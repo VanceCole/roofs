@@ -1,10 +1,6 @@
-# FoundryVTT Module
+# Roofs
+A FoundryVTT module that allows you to place overhead tiles such as roofs.
 
-Issues:
-- F) Animated tiles should start playing when moved to roof
-- H) Icons are ugly
-
-## Changelog
-
-Hard:
-- G) Player tokens should automatically reveal when moving under roofs
+### Known Issues:
+- Does not yet support animated tiles
+- Player tokens should automatically reveal when moving under roofs

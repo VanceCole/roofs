@@ -25,6 +25,7 @@ export default class RoofsLayer extends CanvasLayer {
     tile.roof = { container, sprite };
     canvas.roofs.addChild(container);
     RoofsLayer.setTransform(tile);
+    tile.tile.alpha = 0;
   }
 
   /**
@@ -35,6 +36,7 @@ export default class RoofsLayer extends CanvasLayer {
     tile.roof.sprite.destroy();
     tile.roof.container.destroy();
     delete tile.roof;
+    tile.tile.alpha = 1;
   }
 
   /**
@@ -54,7 +56,6 @@ export default class RoofsLayer extends CanvasLayer {
    * @param {Object} data  Change data
    */
   static _onUpdateTile(scene, data) {
-    console.log(data);
     const tile = canvas.tiles.get(data._id);
     const isRoof = tile.getFlag('roofs', 'isRoof');
     if (isRoof && !tile.roof) RoofsLayer.createRoof(tile);
@@ -69,16 +70,18 @@ export default class RoofsLayer extends CanvasLayer {
    * @param {Object} roof      (dest) PIXI.sprite to update
    */
   static setTransform(tile) {
-    console.log(tile);
     if (!tile || !tile.roof) return;
     const src = tile.tile.children[0];
     const { container, sprite } = tile.roof;
+
+    if (!game.user.isGM) container.visible = !tile.data.hidden;
+    else if (tile.data.hidden) container.alpha = 0.15;
+    else container.alpha = 1;
 
     // Update container transform
     container.x = tile.x;
     container.y = tile.y;
     container.zIndex = tile.data.z;
-    container.visible = !tile.data.hidden;
     // Update sprite transform
     sprite.anchor.set(0.5);
     sprite.width = src.width;
@@ -165,15 +168,19 @@ export default class RoofsLayer extends CanvasLayer {
    * @param {Object} data   data prop of tile
    */
   static async extendTileHUD(hud, html, data) {
-    // Reference to the sprite of the tile
+    const isRoof = hud.object.getFlag('roofs', 'isRoof');
+    const myHtml = await renderTemplate('/modules/roofs/templates/hud.hbs', { isRoof });
     const left = html.find('.col.left');
-    const myHtml = await renderTemplate('/modules/roofs/templates/hud.hbs');
     left.append(myHtml);
-    html.find('.send-to-roofs').click(() => {
+    html.find('.roof').click(() => {
       RoofsLayer.receiveTile(hud.object, data);
+      html.find('.roof').addClass('active');
+      html.find('.floor').removeClass('active');
     });
-    html.find('.send-to-tiles').click(() => {
+    html.find('.floor').click(() => {
       RoofsLayer.releaseTile(hud.object, data);
+      html.find('.floor').addClass('active');
+      html.find('.roof').removeClass('active');
     });
     html.find('.roofs-config').click(() => {
 

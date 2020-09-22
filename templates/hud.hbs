@@ -1,9 +1,19 @@
-    <div class="control-icon send-to-roofs">
-      <i class="fas fa-angle-up"></i>
-    </div>
-    <div class="control-icon send-to-tiles">
-      <i class="fas fa-th-large"></i>
-    </div>
-    <div class="control-icon roofs-config">
-      <i class="fas fa-cog"></i>
-    </div>
+<div class="control-icon roof {{#if isRoof}}active{{/if}}">
+  <img src="modules/roofs/img/roof.svg" width="36" height="36" title="Send to Roof">
+</div>
+<div class="control-icon floor {{#unless isRoof}}active{{/unless}}">
+  <img src="modules/roofs/img/floor.svg" width="36" height="36" title="Send to Floor">
+</div>
+<div class="control-icon roofs-config">
+  <i class="fas fa-cog"></i>
+</div>
+<div class="roofs-opacity">
+  <div class="vslider-group">
+    <input class="vslider" type="range" value="0.5" min="0" max="1" step="0.1" data-dtype="Number">
+    <div class="vslider-label">GM</div>
+  </div>
+  <div class="vslider-group">
+    <input class="vslider" type="range" value="0.5" min="0" max="1" step="0.1" data-dtype="Number">
+    <div class="vslider-label">PL</div>
+  </div>
+</div>
