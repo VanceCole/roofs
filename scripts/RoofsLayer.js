@@ -1,6 +1,11 @@
 import { log } from './helpers.js';
 
 export default class RoofsLayer extends CanvasLayer {
+  constructor() {
+    super();
+    this.sortableChildren = true;
+  }
+
   static init() {
     log('Init RoofsLayer', true);
     canvas.tiles.placeables.forEach((t) => {
@@ -32,13 +37,24 @@ export default class RoofsLayer extends CanvasLayer {
     delete tile.roof;
   }
 
-  static deleteTile(scene, data) {
+  /**
+   * React to Hook 'preDeleteTile'
+   * @param {Object} scene Scene Entity
+   * @param {Object} data  Change data
+   */
+  static _onPreDeleteTile(scene, data) {
     const tile = canvas.tiles.get(data._id);
     if (!tile.roof) return;
     RoofsLayer.destroyRoof(tile);
   }
 
-  static _updateTile(scene, data) {
+  /**
+   * React to Hook 'UpdateTile'
+   * @param {Object} scene Scene Entity
+   * @param {Object} data  Change data
+   */
+  static _onUpdateTile(scene, data) {
+    console.log(data);
     const tile = canvas.tiles.get(data._id);
     const isRoof = tile.getFlag('roofs', 'isRoof');
     if (isRoof && !tile.roof) RoofsLayer.createRoof(tile);
@@ -53,6 +69,7 @@ export default class RoofsLayer extends CanvasLayer {
    * @param {Object} roof      (dest) PIXI.sprite to update
    */
   static setTransform(tile) {
+    console.log(tile);
     if (!tile || !tile.roof) return;
     const src = tile.tile.children[0];
     const { container, sprite } = tile.roof;
@@ -60,6 +77,8 @@ export default class RoofsLayer extends CanvasLayer {
     // Update container transform
     container.x = tile.x;
     container.y = tile.y;
+    container.zIndex = tile.data.z;
+    container.visible = !tile.data.hidden;
     // Update sprite transform
     sprite.anchor.set(0.5);
     sprite.width = src.width;
@@ -141,7 +160,6 @@ export default class RoofsLayer extends CanvasLayer {
   /**
    * Callback for renderTileHud
    * Adds roof buttons
-   *
    * @param {Object} tile   Tile Object
    * @param {Object} html   jQuery selection
    * @param {Object} data   data prop of tile

@@ -22,8 +22,8 @@ Hooks.once('canvasInit', () => {
 });
 
 Hooks.on('canvasReady', RoofsLayer.init);
-Hooks.on('updateTile', RoofsLayer._updateTile);
-Hooks.on('deleteTile', RoofsLayer.deleteTile);
+Hooks.on('updateTile', RoofsLayer._onUpdateTile);
+Hooks.on('preDeleteTile', RoofsLayer._onPreDeleteTile);
 Hooks.on('renderTileHUD', RoofsLayer.extendTileHUD);
 
 // Remember we need to patch Sight.update()
