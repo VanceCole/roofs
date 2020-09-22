@@ -1,32 +1,10 @@
 import { log } from './helpers.js';
 
 export default class RoofsLayer extends CanvasLayer {
-  async init() {
+  static init() {
     log('Init RoofsLayer', true);
-    this.containers = {};
-
-    const active = canvas.scene.getFlag('roofs', 'active');
-    if (!active) return;
-
-    /**
-     * Load any existing tracked roofs
-     */
-    // eslint-disable-next-line no-restricted-syntax
-    Object.keys(active).forEach((k) => {
-      const tile = canvas.tiles.get(k);
-      if (tile) this.createRoof(tile);
-    });
-  }
-
-  static tick() {
-    const containers = canvas?.roofs?.containers;
-    if (containers === undefined) return;
-    const keys = Object.keys(containers);
-    if (!keys.length) return;
-    keys.forEach((k) => {
-      const tile = canvas.tiles.get(k);
-      const { container, sprite } = containers[k];
-      RoofsLayer.setTransform(tile, container, sprite);
+    canvas.tiles.placeables.forEach((t) => {
+      if (t.getFlag('roofs', 'isRoof')) RoofsLayer.createRoof(t);
     });
   }
 
@@ -34,69 +12,38 @@ export default class RoofsLayer extends CanvasLayer {
    * Adds tile to tracked roofs
    * @param {Object} tile
    */
-  createRoof(tile) {
-    const id = tile.data._id;
-    log(`Creating roof for ${id}`);
-    // Make new container
-    this.containers[id] = {};
+  static createRoof(tile) {
+    log(`Creating roof for ${tile.data._id}`);
     const container = new PIXI.Container();
-    this.containers[id].container = container;
-
-    // Make new sprite
     const sprite = PIXI.Sprite.from(tile.data.img);
-    this.containers[id].sprite = sprite;
-
-    // Add objects to parents
     container.addChild(sprite);
-    this.addChild(container);
-
-    // Update transforms
-    RoofsLayer.setTransform(tile, container, sprite);
+    tile.roof = { container, sprite };
+    canvas.roofs.addChild(container);
+    RoofsLayer.setTransform(tile);
   }
 
   /**
    * Remove a tracked roof
-   * @param {String} id The tile ID
+   * @param {Object} tile
    */
-  destroyRoof(id) {
-    // destroy container
-    this.containers[id].container.destroy();
-    // remove from active containers
-    delete this.containers[id];
+  static destroyRoof(tile) {
+    tile.roof.sprite.destroy();
+    tile.roof.container.destroy();
+    delete tile.roof;
   }
 
   static deleteTile(scene, data) {
-    if (!canvas.roofs.containers[data._id]) return;
-    canvas.roofs.destroyRoof(data._id);
+    const tile = canvas.tiles.get(data._id);
+    if (!tile.roof) return;
+    RoofsLayer.destroyRoof(tile);
   }
 
-  _updateTile(scene, data) {}
-
-  /**
-   * React to change in flags
-   * @param {Object} scene scene entity
-   * @param {Object} data  data that was changed
-   */
-  _updateScene(scene, data) {
-    // Check if update applies to current viewed scene
-    if (!scene._view) return;
-    // React to change in actively tracked roofs
-    if (!hasProperty(data, 'flags.roofs.active')) return;
-
-    // For each changed roof
-    Object.keys(data.flags.roofs.active).forEach((r) => {
-      // Check if roof removed
-      if (r.startsWith('-=')) {
-        const id = r.substr(2);
-        this.destroyRoof(id);
-      }
-      // Otherwise, add new roof
-      else {
-        const id = r;
-        const tile = canvas.tiles.get(id);
-        this.createRoof(tile);
-      }
-    });
+  static _updateTile(scene, data) {
+    const tile = canvas.tiles.get(data._id);
+    const isRoof = tile.getFlag('roofs', 'isRoof');
+    if (isRoof && !tile.roof) RoofsLayer.createRoof(tile);
+    else if (!isRoof && tile.roof) RoofsLayer.destroyRoof(tile);
+    else if (isRoof) RoofsLayer.setTransform(tile);
   }
 
   /**
@@ -105,9 +52,11 @@ export default class RoofsLayer extends CanvasLayer {
    * @param {Object} container (dest) The container holding the sprite
    * @param {Object} roof      (dest) PIXI.sprite to update
    */
-  static setTransform(tile, container, sprite) {
-    if (!tile || !sprite || !container?.transform) return;
+  static setTransform(tile) {
+    if (!tile || !tile.roof) return;
     const src = tile.tile.children[0];
+    const { container, sprite } = tile.roof;
+
     // Update container transform
     container.x = tile.x;
     container.y = tile.y;
@@ -123,48 +72,46 @@ export default class RoofsLayer extends CanvasLayer {
   /**
    * React to tile being sent from standard tile layer
    * @param {Object} tile   instance of Tile
-   * @param {Object} data   Tile.data
    */
   static receiveTile(tile) {
-    const id = tile.data._id;
-    log(`Releasing tile ${id}`);
-    // Set flag that this is a roof now
-    canvas.scene.setFlag('roofs', `active.${id}`, {});
+    log(`Releasing tile ${tile.data._id}`);
+    tile.setFlag('roofs', 'isRoof', true);
   }
 
   /**
    * Remove tile from our roof layer
    * @param {Object} tile   instance of Tile
-   * @param {Object} data   Tile.data
    */
   static releaseTile(tile) {
-    const id = tile.data._id;
-    log(`Releasing tile ${id}`);
-    canvas.scene.setFlag('roofs', `active.-=${id}`, null);
+    log(`Releasing tile ${tile.data._id}`);
+    tile.setFlag('roofs', 'isRoof', false);
   }
 
-  static hide(targets) {
-    const tgs = targets.map((t) => t.id);
-    const containers = canvas?.roofs?.containers;
-    if (containers === undefined) return;
-    const keys = Object.keys(containers).filter((k) => tgs.includes(k));
-    if (!keys.length) return;
-    keys.forEach((k) => {
-      containers[k].sprite.visible = false;
+  /**
+   * Set array of tiles visibility true
+   * @param {Array} tiles   instance of Tile
+   */
+  static hide(tiles) {
+    tiles.forEach((tile) => {
+      if (!tile.roof) return;
+      tile.roof.container.visible = false;
     });
   }
 
-  static show(targets) {
-    const tgs = targets.map((t) => t.id);
-    const containers = canvas?.roofs?.containers;
-    if (containers === undefined) return;
-    const keys = Object.keys(containers).filter((k) => tgs.includes(k));
-    if (!keys.length) return;
-    keys.forEach((k) => {
-      containers[k].sprite.visible = true;
+  /**
+   * Set array of tiles visibility false
+   * @param {Array} tiles   instance of Tile
+   */
+  static show(tiles) {
+    tiles.forEach((tile) => {
+      if (!tile.roof) return;
+      tile.roof.container.visible = true;
     });
   }
 
+  /**
+   * Patch drag handlers to hide roofs during drag ops
+   */
   static _patchDrag() {
     // eslint-disable-next-line camelcase
     const og_onDragLeftStart = Tile.prototype._onDragLeftStart;
@@ -189,5 +136,29 @@ export default class RoofsLayer extends CanvasLayer {
       RoofsLayer.show(targets);
       og_onDragLeftCancel.call(this, event);
     };
+  }
+
+  /**
+   * Callback for renderTileHud
+   * Adds roof buttons
+   *
+   * @param {Object} tile   Tile Object
+   * @param {Object} html   jQuery selection
+   * @param {Object} data   data prop of tile
+   */
+  static async extendTileHUD(hud, html, data) {
+    // Reference to the sprite of the tile
+    const left = html.find('.col.left');
+    const myHtml = await renderTemplate('/modules/roofs/templates/hud.hbs');
+    left.append(myHtml);
+    html.find('.send-to-roofs').click(() => {
+      RoofsLayer.receiveTile(hud.object, data);
+    });
+    html.find('.send-to-tiles').click(() => {
+      RoofsLayer.releaseTile(hud.object, data);
+    });
+    html.find('.roofs-config').click(() => {
+
+    });
   }
 }
