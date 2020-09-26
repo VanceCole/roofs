@@ -25,5 +25,6 @@ Hooks.on('canvasReady', RoofsLayer.init);
 Hooks.on('updateTile', RoofsLayer._onUpdateTile);
 Hooks.on('preDeleteTile', RoofsLayer._onPreDeleteTile);
 Hooks.on('renderTileHUD', RoofsLayer.extendTileHUD);
+Hooks.on('updateToken', RoofsLayer._onUpdateToken);
 
 // Remember we need to patch Sight.update()

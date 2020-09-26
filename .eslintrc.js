@@ -458,5 +458,6 @@ module.exports = {
     keyboard: 'readonly',
     JSHINT: 'readonly',
     game: 'readonly',
+    ENTITY_PERMISSIONS: 'readonly',
   },
 };
