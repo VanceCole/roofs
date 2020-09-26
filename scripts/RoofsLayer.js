@@ -1,4 +1,6 @@
-import { log, translatePoint } from './helpers.js';
+import { log, translatePoint, readPixel } from './helpers.js';
+
+CONFIG.debug.roofs = true;
 
 export default class RoofsLayer extends CanvasLayer {
   constructor() {
@@ -8,23 +10,23 @@ export default class RoofsLayer extends CanvasLayer {
 
   static init() {
     log('Init RoofsLayer', true);
-    canvas.tiles.placeables.forEach((t) => {
-      if (t.getFlag('roofs', 'isRoof')) RoofsLayer.createRoof(t);
+    canvas.tiles.placeables.forEach((tile) => {
+      if (tile.getFlag('roofs', 'isRoof')) RoofsLayer.createRoof(tile);
     });
   }
 
   /**
    * React to tile being sent from standard tile layer
-   * @param {Object} tile   instance of Tile
+   * @param {Tile} tile   instance of Tile
    */
   static receiveTile(tile) {
-    log(`Releasing tile ${tile.data._id}`);
+    log(`Receiving tile ${tile.data._id}`);
     tile.setFlag('roofs', 'isRoof', true);
   }
 
   /**
    * Remove tile from our roof layer
-   * @param {Object} tile   instance of Tile
+   * @param {Tile} tile   instance of Tile
    */
   static releaseTile(tile) {
     log(`Releasing tile ${tile.data._id}`);
@@ -33,10 +35,10 @@ export default class RoofsLayer extends CanvasLayer {
 
   /**
    * Adds tile to tracked roofs
-   * @param {Object} tile
+   * @param {Tile} tile
    */
   static createRoof(tile) {
-    log(`Creating roof for ${tile.data._id}`);
+    log(`Creating roof ${tile.data._id}`);
     const container = new PIXI.Container();
     const sprite = PIXI.Sprite.from(tile.data.img);
     container.addChild(sprite);
@@ -48,9 +50,10 @@ export default class RoofsLayer extends CanvasLayer {
 
   /**
    * Remove a tracked roof
-   * @param {Object} tile
+   * @param {Tile} tile
    */
   static destroyRoof(tile) {
+    log(`Destroying roof ${tile.data._id}`);
     tile.roof.sprite.destroy();
     tile.roof.container.destroy();
     delete tile.roof;
@@ -59,7 +62,7 @@ export default class RoofsLayer extends CanvasLayer {
 
   /**
    * React to Hook 'preDeleteTile'
-   * @param {Object} scene Scene Entity
+   * @param {Scene}  scene Scene Entity
    * @param {Object} data  Change data
    */
   static _onPreDeleteTile(scene, data) {
@@ -70,27 +73,43 @@ export default class RoofsLayer extends CanvasLayer {
 
   /**
    * React to Hook 'UpdateTile'
-   * @param {Object} scene Scene Entity
+   * @param {Scene}  scene Scene Entity
    * @param {Object} data  Change data
    */
   static _onUpdateTile(scene, data) {
     const tile = canvas.tiles.get(data._id);
     const isRoof = tile.getFlag('roofs', 'isRoof');
+    // If isnt roof but is becoming one, createRoof
     if (isRoof && !tile.roof) RoofsLayer.createRoof(tile);
+    // If was roof, but isn't now, destroyRoof
     else if (!isRoof && tile.roof) RoofsLayer.destroyRoof(tile);
+    // Otherwise update existing roof
     else if (isRoof) RoofsLayer.setTransform(tile);
   }
 
+  /**
+   * Check if token is in bounds of given tile
+   * @param {Tile}  tile
+   * @param {Token} token
+   */
   static inBounds(tile, token) {
+    // Get local pos relative to tile
     const local = translatePoint({ x: token.data.x, y: token.data.y }, canvas.stage, tile);
-    local.x += (token.data.width * canvas.grid.size) / 2;
-    local.y += (token.data.height * canvas.grid.size) / 2;
+    // Adjust pos to token center
+    local.x += token.data.width * canvas.grid.size / 2;
+    local.y += token.data.height * canvas.grid.size / 2;
+    local.x = Math.round(local.x);
+    local.y = Math.round(local.y);
+    // Check if in bounds of the tile
     if (
       local.x > 0
       && local.y > 0
       && local.x < tile.width
       && local.y < tile.height
-    ) return true;
+    ) {
+      const pixel = readPixel(tile.roof.container, local.x, local.y);
+      if (pixel[3] > 1) return true;
+    }
     return false;
   }
 
@@ -109,7 +128,7 @@ export default class RoofsLayer extends CanvasLayer {
   static setAlphas() {
     canvas.tiles.placeables.forEach((tile) => {
       // If this tile isnt a roof, do nothing
-      if (!tile.getFlag('roofs', 'isRoof')) return;
+      if (!tile.roof) return;
       // Find if any player token with obs is under roof
       const inBounds = canvas.tokens.placeables
         .filter((token) => token.observer && token.actor.isPC)
@@ -129,6 +148,7 @@ export default class RoofsLayer extends CanvasLayer {
 
   /**
    * Set array of tiles visibility true
+   * Mostly used when temp hiding tiles for drag ops etc
    * @param {Array} tiles   instance of Tile
    */
   static hide(tiles) {
@@ -151,9 +171,9 @@ export default class RoofsLayer extends CanvasLayer {
 
   /**
    * Sync transforms between a given tile entity and sprite
-   * @param {Object} tile      (src) The Tile entity to update from
-   * @param {Object} container (dest) The container holding the sprite
-   * @param {Object} roof      (dest) PIXI.sprite to update
+   * @param {Tile}           tile      (src) The Tile entity to update from
+   * @param {PIXI.Container} container (dest) The container holding the sprite
+   * @param {PIXI.Sprite}    roof      (dest) PIXI.sprite to update
    */
   static setTransform(tile) {
     if (!tile || !tile.roof) return;
@@ -206,9 +226,9 @@ export default class RoofsLayer extends CanvasLayer {
   /**
    * Callback for renderTileHud
    * Adds roof buttons
-   * @param {Object} tile   Tile Object
-   * @param {Object} html   jQuery selection
-   * @param {Object} data   data prop of tile
+   * @param {Object} hud    HUD Object for the tile Object
+   * @param {Object} html   jQuery selection of HTML to be rendered
+   * @param {Object} data   data prop passed to HUD
    */
   static async extendTileHUD(hud, html, data) {
     // Get props

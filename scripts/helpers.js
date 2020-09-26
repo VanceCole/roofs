@@ -24,3 +24,42 @@ export function translatePoint(point, context1, context2) {
   context1.removeChild(pt);
   return tp;
 }
+
+/**
+ * Gets a single pixel of texture data from GPU
+ * @param target {Object} PIXI Object to read from
+ * @param x {Integer}     X Position to read
+ * @param y {Integer}     Y Position to read
+ */
+export function readPixel(target, x = 0, y = 0) {
+  const { renderer } = canvas.app;
+  let resolution;
+  let renderTexture;
+  let generated = false;
+  let frame;
+  if (target instanceof PIXI.RenderTexture) {
+    renderTexture = target;
+  }
+  else {
+    renderTexture = renderer.generateTexture(target);
+    generated = true;
+  }
+  if (renderTexture) {
+    resolution = renderTexture.baseTexture.resolution;
+    frame = renderTexture.frame;
+    renderer.renderTexture.bind(renderTexture);
+  }
+  else {
+    resolution = renderer.resolution;
+    frame = PIXI.TEMP_RECT;
+    frame.width = renderer.width;
+    frame.height = renderer.height;
+    renderer.renderTexture.bind(null);
+  }
+  const pixel = new Uint8Array(4);
+  // read pixels to the array
+  const { gl } = renderer;
+  gl.readPixels(x * resolution, y * resolution, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+  if (generated) renderTexture.destroy(true);
+  return pixel;
+}
