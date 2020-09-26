@@ -137,12 +137,12 @@ export default class RoofsLayer extends CanvasLayer {
       const { container } = tile.roof;
       container.visible = true;
       if (tile.data.hidden) {
-        if (game.user.isGM) container.alpha = 0.2;
+        if (game.user.isGM) container.alpha = 0.3;
         else container.visible = false;
       }
-      else if (inBounds) container.alpha = 0.2;
-      else if (game.user.isGM) container.alpha = tile.getFlag('roofs', 'gmOpacity') || 1;
-      else container.alpha = tile.getFlag('roofs', 'plOpacity') || 0.8;
+      else if (inBounds) container.alpha = 0.3;
+      else if (game.user.isGM) container.alpha = tile.getFlag('roofs', 'gmOpacity') || 0.8;
+      else container.alpha = tile.getFlag('roofs', 'plOpacity') || 1;
     });
   }
 
