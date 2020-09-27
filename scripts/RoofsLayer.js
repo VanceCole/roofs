@@ -40,9 +40,11 @@ export default class RoofsLayer extends CanvasLayer {
   static createRoof(tile) {
     log(`Creating roof ${tile.data._id}`);
     const container = new PIXI.Container();
+    const wrapper = new PIXI.Container();
     const sprite = PIXI.Sprite.from(tile.data.img);
-    container.addChild(sprite);
-    tile.roof = { container, sprite };
+    wrapper.addChild(sprite);
+    container.addChild(wrapper);
+    tile.roof = { container, wrapper, sprite };
     canvas.roofs.addChild(container);
     RoofsLayer.setTransform(tile);
     tile.tile.alpha = 0;
@@ -93,21 +95,25 @@ export default class RoofsLayer extends CanvasLayer {
    * @param {Token} token
    */
   static inBounds(tile, token) {
+    // Get canvas coords of token, accounting for token center
+    const x = token.data.x + (token.data.width * canvas.grid.size / 2);
+    const y = token.data.y + (token.data.height * canvas.grid.size / 2);
     // Get local pos relative to tile
-    const local = translatePoint({ x: token.data.x, y: token.data.y }, canvas.stage, tile);
-    // Adjust pos to token center
-    local.x += token.data.width * canvas.grid.size / 2;
-    local.y += token.data.height * canvas.grid.size / 2;
-    local.x = Math.round(local.x);
-    local.y = Math.round(local.y);
+    const local = translatePoint({ x, y }, canvas.stage, tile.roof.sprite);
+    // Adjust local pos to account for centered anchor
+    local.x = Math.round(local.x + tile.roof.sprite.width / 2);
+    local.y = Math.round(local.y + tile.roof.sprite.height / 2);
     // Check if in bounds of the tile
+    log(`Converting location (${x},${y}) to (${local.x},${local.y})`);
     if (
       local.x > 0
       && local.y > 0
-      && local.x < tile.width
-      && local.y < tile.height
+      && local.x < tile.roof.sprite.width
+      && local.y < tile.roof.sprite.height
     ) {
-      const pixel = readPixel(tile.roof.container, local.x, local.y);
+      // Get alpha value of texture at coordinate
+      const pixel = readPixel(tile.roof.wrapper, local.x, local.y);
+      // Sometimes alpha value of 0 gets ceiled up to 1 so check if > 1 instead of 0
       if (pixel[3] > 1) return true;
     }
     return false;
@@ -178,18 +184,12 @@ export default class RoofsLayer extends CanvasLayer {
   static setTransform(tile) {
     if (!tile || !tile.roof) return;
     const src = tile.tile.children[0];
-    const { container, sprite } = tile.roof;
+    const { container, wrapper, sprite } = tile.roof;
     // Update container transform
-    container.x = tile.x;
-    container.y = tile.y;
+    container.transform = tile.transform;
     container.zIndex = tile.data.z;
-    // Update sprite transform
+    wrapper.transform = src.transform;
     sprite.anchor.set(0.5);
-    sprite.width = src.width;
-    sprite.height = src.height;
-    sprite.x = src.x;
-    sprite.y = src.y;
-    sprite.angle = src.angle;
     // Update visibility
     RoofsLayer.setAlphas();
   }
