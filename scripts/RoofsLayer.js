@@ -94,7 +94,7 @@ export default class RoofsLayer extends CanvasLayer {
   static _onHoverTile(tile, state) {
     if (!game.user.isGM || !game.settings.get('roofs', 'quickPeek')) return;
     if (!tile.getFlag('roofs', 'isRoof')) return;
-    const open = tile.getFlag('roofs', 'open') || game.settings.get('roofs', 'defaultOpen');
+    const { open } = RoofsLayer.getOpacity(tile);
     if (state) tile.roof.container.alpha = open;
     else RoofsLayer.setAlphas();
   }
@@ -139,6 +139,18 @@ export default class RoofsLayer extends CanvasLayer {
   }
 
   /**
+   * Get current open / closed opacity values, or defaults if not set
+   * @param {Tile} tile  Foundry Tile entity
+   */
+  static getOpacity(tile) {
+    let open = tile.getFlag('roofs', 'open');
+    open = (open !== undefined) ? open : game.settings.get('roofs', 'defaultOpen');
+    let closed = tile.getFlag('roofs', 'closed');
+    closed = (closed !== undefined) ? closed : game.settings.get('roofs', 'defaultClosed');
+    return { open, closed };
+  }
+
+  /**
    * For each tile in scene, check if is roof and if so, set alpha & vis
    */
   static setAlphas() {
@@ -152,8 +164,7 @@ export default class RoofsLayer extends CanvasLayer {
       // Set visibility & alpha
       const { container } = tile.roof;
       container.visible = true;
-      const open = tile.getFlag('roofs', 'open') || game.settings.get('roofs', 'defaultOpen');
-      const closed = tile.getFlag('roofs', 'closed') || game.settings.get('roofs', 'defaultClosed');
+      const { open, closed } = RoofsLayer.getOpacity(tile);
       if (tile.data.hidden) {
         if (game.user.isGM) container.alpha = open;
         else container.visible = false;
@@ -245,30 +256,31 @@ export default class RoofsLayer extends CanvasLayer {
     // Get props
     const tile = hud.object;
     const isRoof = tile.getFlag('roofs', 'isRoof');
-    const open = tile.getFlag('roofs', 'open') || game.settings.get('roofs', 'defaultOpen');
-    const closed = tile.getFlag('roofs', 'closed') || game.settings.get('roofs', 'defaultClosed');
+    const { open, closed } = RoofsLayer.getOpacity(tile);
 
     // Append template
     const form = await renderTemplate('/modules/roofs/templates/hud.hbs', { isRoof, open, closed });
     html.find('.col.left').append(form);
 
-    // Add listeners
+    // Send to roof
     html.find('.roof').click(() => {
       RoofsLayer.receiveTile(tile, data);
       html.find('.roof').addClass('active');
       html.find('.floor').removeClass('active');
     });
+    // Send to floor
     html.find('.floor').click(() => {
       RoofsLayer.releaseTile(tile, data);
       html.find('.floor').addClass('active');
       html.find('.roof').removeClass('active');
     });
-    html.find('.roofs-config').click(() => {});
+    // open state opacity slider
     const openSlider = html.find('input[name="open"]');
     openSlider.change(() => {
       const val = parseFloat(openSlider[0].value);
       tile.setFlag('roofs', 'open', val);
     });
+    // closed state opacity slider
     const closedSlider = html.find('input[name="closed"]');
     closedSlider.change(() => {
       const val = parseFloat(closedSlider[0].value);
