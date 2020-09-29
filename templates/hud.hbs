@@ -1,19 +1,16 @@
 <div class="control-icon roof {{#if isRoof}}active{{/if}}">
-  <img src="modules/roofs/img/roof.svg" width="36" height="36" title="Send to Roof">
+  <img src="modules/roofs/img/roof.svg" width="36" height="36" title="{{localize 'ROOFS.sendToRoof'}}">
 </div>
 <div class="control-icon floor {{#unless isRoof}}active{{/unless}}">
-  <img src="modules/roofs/img/floor.svg" width="36" height="36" title="Send to Floor">
-</div>
-<div class="control-icon roofs-config">
-  <i class="fas fa-cog"></i>
+  <img src="modules/roofs/img/floor.svg" width="36" height="36" title="{{localize 'ROOFS.sendToFloor'}}">
 </div>
 <div class="roofs-opacity">
   <div class="vslider-group">
-    <input class="vslider" name="gm-opacity" type="range" value="{{gmOpacity}}" min="0" max="1" step="0.1" data-dtype="Number">
-    <div class="vslider-label">GM</div>
+    <input class="vslider" name="open" type="range" value="{{open}}" min="0" max="1" step="0.1" data-dtype="Number">
+    <div class="vslider-label"><i class="fa fa-eye"></i></div>
   </div>
   <div class="vslider-group">
-    <input class="vslider" name="pl-opacity" type="range" value="{{plOpacity}}" min="0" max="1" step="0.1" data-dtype="Number">
-    <div class="vslider-label">PL</div>
+    <input class="vslider" name="closed" type="range" value="{{closed}}" min="0" max="1" step="0.1" data-dtype="Number">
+    <div class="vslider-label"><i class="fas fa-low-vision"></i></div>
   </div>
 </div>

@@ -1,7 +1,5 @@
 import { log, translatePoint, readPixel } from './helpers.js';
 
-CONFIG.debug.roofs = true;
-
 export default class RoofsLayer extends CanvasLayer {
   constructor() {
     super();
@@ -90,6 +88,18 @@ export default class RoofsLayer extends CanvasLayer {
   }
 
   /**
+   * React to hover of tile and peek if user is GM
+   * @param {Tile} tile  Tile entity
+   */
+  static _onHoverTile(tile, state) {
+    if (!game.user.isGM || !game.settings.get('roofs', 'quickPeek')) return;
+    if (!tile.getFlag('roofs', 'isRoof')) return;
+    const open = tile.getFlag('roofs', 'open') || game.settings.get('roofs', 'defaultOpen');
+    if (state) tile.roof.container.alpha = open;
+    else RoofsLayer.setAlphas();
+  }
+
+  /**
    * Check if token is in bounds of given tile
    * @param {Tile}  tile
    * @param {Token} token
@@ -142,13 +152,14 @@ export default class RoofsLayer extends CanvasLayer {
       // Set visibility & alpha
       const { container } = tile.roof;
       container.visible = true;
+      const open = tile.getFlag('roofs', 'open') || game.settings.get('roofs', 'defaultOpen');
+      const closed = tile.getFlag('roofs', 'closed') || game.settings.get('roofs', 'defaultClosed');
       if (tile.data.hidden) {
-        if (game.user.isGM) container.alpha = 0.3;
+        if (game.user.isGM) container.alpha = open;
         else container.visible = false;
       }
-      else if (inBounds) container.alpha = 0.3;
-      else if (game.user.isGM) container.alpha = tile.getFlag('roofs', 'gmOpacity') || 0.8;
-      else container.alpha = tile.getFlag('roofs', 'plOpacity') || 1;
+      else if (inBounds) container.alpha = open;
+      else container.alpha = closed;
     });
   }
 
@@ -234,11 +245,11 @@ export default class RoofsLayer extends CanvasLayer {
     // Get props
     const tile = hud.object;
     const isRoof = tile.getFlag('roofs', 'isRoof');
-    const gmOpacity = tile.getFlag('roofs', 'gmOpacity') || 0.8;
-    const plOpacity = tile.getFlag('roofs', 'plOpacity') || 1;
+    const open = tile.getFlag('roofs', 'open') || game.settings.get('roofs', 'defaultOpen');
+    const closed = tile.getFlag('roofs', 'closed') || game.settings.get('roofs', 'defaultClosed');
 
     // Append template
-    const form = await renderTemplate('/modules/roofs/templates/hud.hbs', { isRoof, gmOpacity, plOpacity });
+    const form = await renderTemplate('/modules/roofs/templates/hud.hbs', { isRoof, open, closed });
     html.find('.col.left').append(form);
 
     // Add listeners
@@ -253,15 +264,15 @@ export default class RoofsLayer extends CanvasLayer {
       html.find('.roof').removeClass('active');
     });
     html.find('.roofs-config').click(() => {});
-    const gmSlider = html.find('input[name="gm-opacity"]');
-    gmSlider.change(() => {
-      const val = gmSlider[0].value;
-      tile.setFlag('roofs', 'gmOpacity', val);
+    const openSlider = html.find('input[name="open"]');
+    openSlider.change(() => {
+      const val = parseFloat(openSlider[0].value);
+      tile.setFlag('roofs', 'open', val);
     });
-    const plSlider = html.find('input[name="pl-opacity"]');
-    plSlider.change(() => {
-      const val = plSlider[0].value;
-      tile.setFlag('roofs', 'plOpacity', val);
+    const closedSlider = html.find('input[name="closed"]');
+    closedSlider.change(() => {
+      const val = parseFloat(closedSlider[0].value);
+      tile.setFlag('roofs', 'closed', val);
     });
   }
 }

@@ -1,3 +1,12 @@
 {
-    "MODULE.hello": "hello"
+    "ROOFS.defaultOpen": "Default Open Roof Opacity",
+    "ROOFS.defaultOpenHint": "The default opacity set for new roofs while in the open state",
+    "ROOFS.defaultClosed": "Default Closed Roof Opacity",
+    "ROOFS.defaultClosedHint": "The default opacity for new roofs while in the closed state",
+    "ROOFS.quickPeek": "Enable GM Quick Peek",
+    "ROOFS.quickPeekHint": "If enabled, hovering a roof while the tile layer is active will temporarily reveal it (for the GM only)",
+    "ROOFS.autoHide": "Enable Token Autohide",
+    "ROOFS.autoHideHint": "If enabled, tokens underneath a roof that is closed will automatically be marked hidden",
+    "ROOFS.sendToRoof": "Send to Roof",
+    "ROOFS.sendToFloor": "Send to Floor"
 }

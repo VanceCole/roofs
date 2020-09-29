@@ -1,9 +1,10 @@
 import RoofsLayer from './RoofsLayer.js';
+import config from './config.js';
 import { log } from './helpers.js';
 
 Hooks.once('init', async () => {
   log('Initializing', true);
-  CONFIG.roofs = { debug: true };
+  config();
   RoofsLayer._patchDrag();
   loadTemplates([
     'modules/roofs/templates/hud.hbs',
@@ -12,13 +13,8 @@ Hooks.once('init', async () => {
 
 Hooks.once('canvasInit', () => {
   // Add RoofsLayer to canvas
-  let layerct;
-  // eslint-disable-next-line no-restricted-syntax
-  for (const [k, v] of Object.entries(canvas.stage.children)) {
-    if (v.constructor.name === 'LightingLayer') layerct = k;
-  }
-  canvas.roofs = canvas.stage.addChildAt(new RoofsLayer(), layerct);
-  canvas.app.ticker.add(RoofsLayer.tick);
+  const index = canvas.stage.getChildIndex(canvas.lighting);
+  canvas.roofs = canvas.stage.addChildAt(new RoofsLayer(), index);
 });
 
 Hooks.on('canvasReady', RoofsLayer.init);
@@ -26,5 +22,6 @@ Hooks.on('updateTile', RoofsLayer._onUpdateTile);
 Hooks.on('preDeleteTile', RoofsLayer._onPreDeleteTile);
 Hooks.on('renderTileHUD', RoofsLayer.extendTileHUD);
 Hooks.on('updateToken', RoofsLayer._onUpdateToken);
+Hooks.on('hoverTile', RoofsLayer._onHoverTile);
 
 // Remember we need to patch Sight.update()
