@@ -115,7 +115,7 @@ export default class RoofsLayer extends CanvasLayer {
     local.x = Math.round(local.x + tile.roof.sprite.width / 2);
     local.y = Math.round(local.y + tile.roof.sprite.height / 2);
     // Check if in bounds of the tile
-    log(`Converting location (${x},${y}) to (${local.x},${local.y})`);
+    log(`Converted global (${x},${y}) to local (${local.x},${local.y})`);
     if (
       local.x > 0
       && local.y > 0
@@ -181,22 +181,27 @@ export default class RoofsLayer extends CanvasLayer {
         container.alpha = closed;
       }
     });
-    RoofsLayer._sightUpdate();
     const t1 = performance.now();
-    log(`Sight update took ${t1 - t0}ms.`);
+    log(`setAlphas took ${t1 - t0}ms.`);
+    canvas.sight.update();
   }
 
+  /**
+   * Checks for tokens under closed roofs that player does not have observer on and hides them
+   */
   static _sightUpdate() {
+    const t0 = performance.now();
     if (!game.settings.get('roofs', 'autoHide')) return;
     canvas.tiles.placeables.forEach((tile) => {
-      if (!tile.roof) return;
-      const tks = canvas.tokens.placeables
-        .filter((token) => !token.observer)
-        .filter((token) => RoofsLayer.inBounds(tile, token));
-      tks.forEach((token) => {
-        token.visible = false;
-      });
+      if (!tile.roof || !tile.roof.state || tile.hidden) return;
+      canvas.tokens.placeables
+        .filter((token) => !token.observer && token.visible && RoofsLayer.inBounds(tile, token))
+        .forEach((token) => {
+          token.visible = false;
+        });
     });
+    const t1 = performance.now();
+    log(`sightUpdate took ${t1 - t0}ms.`);
   }
 
   /**
