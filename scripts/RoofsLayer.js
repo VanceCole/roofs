@@ -85,6 +85,7 @@ export default class RoofsLayer extends CanvasLayer {
     else if (!isRoof && tile.roof) RoofsLayer.destroyRoof(tile);
     // Otherwise update existing roof
     else if (isRoof) RoofsLayer.setTransform(tile);
+    RoofsLayer.setAlphas();
   }
 
   /**
@@ -92,7 +93,7 @@ export default class RoofsLayer extends CanvasLayer {
    * @param {Tile} tile  Tile entity
    */
   static _onHoverTile(tile, state) {
-    if (!game.user.isGM || !game.settings.get('roofs', 'quickPeek')) return;
+    if (!game.settings.get('roofs', 'quickPeek')) return;
     if (!tile.getFlag('roofs', 'isRoof')) return;
     const { open } = RoofsLayer.getOpacity(tile);
     if (state) tile.roof.container.alpha = open;
@@ -154,6 +155,7 @@ export default class RoofsLayer extends CanvasLayer {
    * For each tile in scene, check if is roof and if so, set alpha & vis
    */
   static setAlphas() {
+    const t0 = performance.now();
     canvas.tiles.placeables.forEach((tile) => {
       // If this tile isnt a roof, do nothing
       if (!tile.roof) return;
@@ -180,17 +182,17 @@ export default class RoofsLayer extends CanvasLayer {
       }
     });
     RoofsLayer._sightUpdate();
+    const t1 = performance.now();
+    log(`Sight update took ${t1 - t0}ms.`);
   }
 
   static _sightUpdate() {
-    console.log('updating sight');
     if (!game.settings.get('roofs', 'autoHide')) return;
     canvas.tiles.placeables.forEach((tile) => {
-      if (!tile.roof || !tile.roof.state) return;
+      if (!tile.roof) return;
       const tks = canvas.tokens.placeables
         .filter((token) => !token.observer)
         .filter((token) => RoofsLayer.inBounds(tile, token));
-      console.log(tks.length);
       tks.forEach((token) => {
         token.visible = false;
       });

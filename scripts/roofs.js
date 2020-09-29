@@ -26,7 +26,7 @@ Hooks.once('canvasInit', () => {
  */
 Hooks.once('ready', () => {
   RoofsLayer._patchDrag();
-  // RoofsLayer._patchSight();
+  RoofsLayer._patchSight();
 });
 
 /**
