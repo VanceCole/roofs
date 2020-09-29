@@ -166,11 +166,34 @@ export default class RoofsLayer extends CanvasLayer {
       container.visible = true;
       const { open, closed } = RoofsLayer.getOpacity(tile);
       if (tile.data.hidden) {
+        tile.roof.state = false;
         if (game.user.isGM) container.alpha = open;
         else container.visible = false;
       }
-      else if (inBounds) container.alpha = open;
-      else container.alpha = closed;
+      else if (inBounds) {
+        tile.roof.state = false;
+        container.alpha = open;
+      }
+      else {
+        tile.roof.state = true;
+        container.alpha = closed;
+      }
+    });
+    RoofsLayer._sightUpdate();
+  }
+
+  static _sightUpdate() {
+    console.log('updating sight');
+    if (!game.settings.get('roofs', 'autoHide')) return;
+    canvas.tiles.placeables.forEach((tile) => {
+      if (!tile.roof || !tile.roof.state) return;
+      const tks = canvas.tokens.placeables
+        .filter((token) => !token.observer)
+        .filter((token) => RoofsLayer.inBounds(tile, token));
+      console.log(tks.length);
+      tks.forEach((token) => {
+        token.visible = false;
+      });
     });
   }
 
@@ -214,6 +237,15 @@ export default class RoofsLayer extends CanvasLayer {
     sprite.anchor.set(0.5);
     // Update visibility
     RoofsLayer.setAlphas();
+  }
+
+  static _patchSight() {
+    const origUpdate = canvas.sight.update;
+    canvas.sight.update = function update(...args) {
+      origUpdate.call(this, ...args);
+      RoofsLayer._sightUpdate();
+    };
+    canvas.sight.update();
   }
 
   /**
