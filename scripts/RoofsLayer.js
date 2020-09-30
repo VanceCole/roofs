@@ -247,12 +247,22 @@ export default class RoofsLayer extends CanvasLayer {
   }
 
   static _patchSight() {
-    const origUpdate = canvas.sight.update;
-    canvas.sight.update = function update(...args) {
-      origUpdate.call(this, ...args);
-      RoofsLayer._sightUpdate();
-    };
-    canvas.sight.update();
+    if (game.data.version.startsWith('0.6')) {
+      const origUpdate = canvas.sight.update;
+      canvas.sight.update = function update(...args) {
+        origUpdate.call(this, ...args);
+        RoofsLayer._sightUpdate();
+      };
+      canvas.sight.update();
+    }
+    else {
+      const origUpdate = canvas.sight.refresh;
+      canvas.sight.refresh = function refresh(...args) {
+        origUpdate.call(this, ...args);
+        RoofsLayer._sightUpdate();
+      };
+      canvas.sight.refresh();
+    }
   }
 
   /**
