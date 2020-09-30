@@ -1,14 +1,12 @@
 {
   "name": "roofs",
   "title": "Roofs & Overhead Tiles",
-  "description": "",
+  "description": "Allows you to promote tiles to a layer above tokens such that they display on top, automatically reveal under the roof when a player token walks under, and hide again when they leave.",
   "version": "0.0.1",
   "minimumCoreVersion": "0.6.2",
-  "compatibleCoreVersion": "0.7.2",
+  "compatibleCoreVersion": "0.7.3",
   "author": "Vance",
-  "dependencies": [
-
-  ],
+  "dependencies": [],
   "esmodules": [
     "/scripts/roofs.js"
   ],
@@ -24,5 +22,5 @@
   ],
   "url": "https://github.com/VanceCole/roofs",
   "manifest": "https://raw.githubusercontent.com/VanceCole/roofs/master/module.json",
-  "download": "https://github.com/VanceCole/roofs/releases/download/0.0.1/module.zip"
+  "download": "https://github.com/VanceCole/roofs/releases/download/0.0.2/module.zip"
 }
