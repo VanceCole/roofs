@@ -1,0 +1,12 @@
+{
+    "ROOFS.defaultOpen": "기본 열린 지붕 불투명도",
+    "ROOFS.defaultOpenHint": "새 지붕의 열린 상태에 대해 설정된 기본 불투명도이다.",
+    "ROOFS.defaultClosed": "기본 닫힌 지붕 불투명도",
+    "ROOFS.defaultClosedHint": "새 지붕의 닫힌 상태에 대해 설정된 기본 불투명도이다.",
+    "ROOFS.quickPeek": "GM 슬쩍 보기 활성화",
+    "ROOFS.quickPeekHint": "활성화될 경우 타일 레이어가 활성화된 동안 지붕에 커서를 올리면 일시적으로 내부를 보여준다.",
+    "ROOFS.autoHide": "토큰 자동 숨김 활성화",
+    "ROOFS.autoHideHint": "활성화될 경우 닫힌 지붕 아래의 토큰은 자동으로 숨겨진다.",
+    "ROOFS.sendToRoof": "지붕으로 설정",
+    "ROOFS.sendToFloor": "바닥으로 설정"
+}
