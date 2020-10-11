@@ -8,5 +8,6 @@
     "ROOFS.autoHide": "Enable Token Autohide",
     "ROOFS.autoHideHint": "If enabled, tokens underneath a roof that is closed will automatically be marked hidden",
     "ROOFS.sendToRoof": "Send to Roof",
-    "ROOFS.sendToFloor": "Send to Floor"
+    "ROOFS.sendToFloor": "Send to Floor",
+    "ROOFS.toggleMode": "Toggle roof mode (Automatic/Open/Closed)"
 }

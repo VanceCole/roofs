@@ -3,7 +3,7 @@ A FoundryVTT module that allows you to place overhead tiles such as roofs.
 
 ### Features
 - Allows you to promote tiles to a layer above tokens such that they display on top
-- Automatically reveal under the roof when a player token walks under, and hide again when they leave
+- Automatically reveal under the roof when a player token walks under, and hide again when they leave, or set a roof manually to be open or closed
 - Adjust the opacity of the overhead tile for both the "open" and "closed" states
 
 ![Demo GIF](https://raw.githubusercontent.com/VanceCole/roofs/master/docs/demo.gif)
