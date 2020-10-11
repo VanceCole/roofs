@@ -18,6 +18,11 @@
       "lang": "en",
       "name": "English",
       "path": "languages/en.json"
+    },
+    {
+      "lang": "ko",
+      "name": "Korean",
+      "path": "languages/en.json"
     }
   ],
   "url": "https://github.com/VanceCole/roofs",
