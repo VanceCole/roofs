@@ -4,6 +4,10 @@
 <div class="control-icon floor {{#unless isRoof}}active{{/unless}}">
   <img src="modules/roofs/img/floor.svg" width="36" height="36" title="{{localize 'ROOFS.sendToFloor'}}">
 </div>
+{{#if isRoof}}
+<div class="control-icon mode">
+  <img src="modules/roofs/img/{{mode}}.svg" width="36" height="36" title="{{localize 'ROOFS.toggleMode'}}">
+</div>
 <div class="roofs-opacity">
   <div class="vslider-group">
     <input class="vslider" name="open" type="range" value="{{open}}" min="0" max="1" step="0.1" data-dtype="Number">
@@ -14,3 +18,4 @@
     <div class="vslider-label"><i class="fas fa-low-vision"></i></div>
   </div>
 </div>
+{{/if}}

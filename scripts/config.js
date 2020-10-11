@@ -1,8 +1,8 @@
 export default async function config() {
   CONFIG.roofs = { debug: false };
   game.settings.register('roofs', 'defaultClosed', {
-    name: game.i18n.localize('ROOFS.defaultClosed'),
-    hint: game.i18n.localize('ROOFS.defaultClosedHint'),
+    name: 'ROOFS.defaultClosed',
+    hint: 'ROOFS.defaultClosedHint',
     scope: 'world',
     config: true,
     type: Number,
@@ -14,8 +14,8 @@ export default async function config() {
     },
   });
   game.settings.register('roofs', 'defaultOpen', {
-    name: game.i18n.localize('ROOFS.defaultOpen'),
-    hint: game.i18n.localize('ROOFS.defaultOpenHint'),
+    name: 'ROOFS.defaultOpen',
+    hint: 'ROOFS.defaultOpenHint',
     scope: 'world',
     config: true,
     type: Number,
@@ -27,16 +27,16 @@ export default async function config() {
     },
   });
   game.settings.register('roofs', 'autoHide', {
-    name: game.i18n.localize('ROOFS.autoHide'),
-    hint: game.i18n.localize('ROOFS.autoHideHint'),
+    name: 'ROOFS.autoHide',
+    hint: 'ROOFS.autoHideHint',
     scope: 'world',
     config: true,
     type: Boolean,
     default: true,
   });
   game.settings.register('roofs', 'quickPeek', {
-    name: game.i18n.localize('ROOFS.quickPeek'),
-    hint: game.i18n.localize('ROOFS.quickPeekHint'),
+    name: 'ROOFS.quickPeek',
+    hint: 'ROOFS.quickPeekHint',
     scope: 'world',
     config: true,
     type: Boolean,

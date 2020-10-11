@@ -17,18 +17,34 @@ export default class RoofsLayer extends CanvasLayer {
    * React to tile being sent from standard tile layer
    * @param {Tile} tile   instance of Tile
    */
-  static receiveTile(tile) {
+  static async receiveTile(tile) {
     log(`Receiving tile ${tile.data._id}`);
-    tile.setFlag('roofs', 'isRoof', true);
+    await tile.setFlag('roofs', 'isRoof', true);
   }
 
   /**
    * Remove tile from our roof layer
    * @param {Tile} tile   instance of Tile
    */
-  static releaseTile(tile) {
+  static async releaseTile(tile) {
     log(`Releasing tile ${tile.data._id}`);
-    tile.setFlag('roofs', 'isRoof', false);
+    await tile.setFlag('roofs', 'isRoof', false);
+  }
+
+  /**
+   * Toggle between open/closed/auto states
+   * @param {Tile} tile  instance of Tile
+   */
+  static async toggleMode(tile) {
+    let mode = tile.getFlag('roofs', 'mode');
+    switch (mode) {
+      case 'auto': mode = 'open';
+        break;
+      case 'open': mode = 'closed';
+        break;
+      default: mode = 'auto';
+    }
+    await tile.setFlag('roofs', 'mode', mode);
   }
 
   /**
@@ -144,11 +160,10 @@ export default class RoofsLayer extends CanvasLayer {
    * @param {Tile} tile  Foundry Tile entity
    */
   static getOpacity(tile) {
-    let open = tile.getFlag('roofs', 'open');
-    open = (open !== undefined) ? open : game.settings.get('roofs', 'defaultOpen');
-    let closed = tile.getFlag('roofs', 'closed');
-    closed = (closed !== undefined) ? closed : game.settings.get('roofs', 'defaultClosed');
-    return { open, closed };
+    const open = tile.getFlag('roofs', 'open') ?? game.settings.get('roofs', 'defaultOpen');
+    const closed = tile.getFlag('roofs', 'closed') ?? game.settings.get('roofs', 'defaultClosed');
+    const mode = tile.getFlag('roofs', 'mode') ?? 'auto';
+    return { open, closed, mode };
   }
 
   /**
@@ -159,14 +174,27 @@ export default class RoofsLayer extends CanvasLayer {
     canvas.tiles.placeables.forEach((tile) => {
       // If this tile isnt a roof, do nothing
       if (!tile.roof) return;
-      // Find if any player token with obs is under roof
+      const { container } = tile.roof;
+      const { open, closed, mode } = RoofsLayer.getOpacity(tile);
+      // If tile is in closed mode, just make sure it's closed
+      if (mode === 'closed') {
+        tile.roof.state = true;
+        container.alpha = closed;
+        return;
+      }
+      // If tile is in open mode, just make sure it's open
+      if (mode === 'open') {
+        tile.roof.state = false;
+        container.alpha = open;
+        return;
+      }
+      // Otherwise perform automatic checks
+      // Find if any token with obs is under roof
       const inBounds = canvas.tokens.placeables
-        .filter((token) => token.observer && token.actor.isPC)
+        .filter((token) => token.observer)
         .some((token) => RoofsLayer.inBounds(tile, token));
       // Set visibility & alpha
-      const { container } = tile.roof;
       container.visible = true;
-      const { open, closed } = RoofsLayer.getOpacity(tile);
       if (tile.data.hidden) {
         tile.roof.state = false;
         if (game.user.isGM) container.alpha = open;
@@ -301,27 +329,30 @@ export default class RoofsLayer extends CanvasLayer {
    * @param {Object} html   jQuery selection of HTML to be rendered
    * @param {Object} data   data prop passed to HUD
    */
-  static async extendTileHUD(hud, html, data) {
+  static async extendTileHUD(hud, html) {
     // Get props
     const tile = hud.object;
     const isRoof = tile.getFlag('roofs', 'isRoof');
-    const { open, closed } = RoofsLayer.getOpacity(tile);
+    const { open, closed, mode } = RoofsLayer.getOpacity(tile);
 
     // Append template
-    const form = await renderTemplate('/modules/roofs/templates/hud.hbs', { isRoof, open, closed });
+    const form = await renderTemplate('/modules/roofs/templates/hud.hbs', { isRoof, open, closed, mode });
     html.find('.col.left').append(form);
 
     // Send to roof
-    html.find('.roof').click(() => {
-      RoofsLayer.receiveTile(tile, data);
-      html.find('.roof').addClass('active');
-      html.find('.floor').removeClass('active');
+    html.find('.roof').click(async () => {
+      await RoofsLayer.receiveTile(tile);
+      hud.render();
     });
     // Send to floor
-    html.find('.floor').click(() => {
-      RoofsLayer.releaseTile(tile, data);
-      html.find('.floor').addClass('active');
-      html.find('.roof').removeClass('active');
+    html.find('.floor').click(async () => {
+      await RoofsLayer.releaseTile(tile);
+      hud.render();
+    });
+    // Toggle mode
+    html.find('.mode').click(async () => {
+      await RoofsLayer.toggleMode(tile);
+      hud.render();
     });
     // open state opacity slider
     const openSlider = html.find('input[name="open"]');
