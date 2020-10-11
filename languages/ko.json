@@ -8,5 +8,6 @@
     "ROOFS.autoHide": "토큰 자동 숨김 활성화",
     "ROOFS.autoHideHint": "활성화될 경우 닫힌 지붕 아래의 토큰은 자동으로 숨겨진다.",
     "ROOFS.sendToRoof": "지붕으로 설정",
-    "ROOFS.sendToFloor": "바닥으로 설정"
+    "ROOFS.sendToFloor": "바닥으로 설정",
+    "ROOFS.toggleMode": ""
 }
