@@ -27,5 +27,6 @@
   ],
   "url": "https://github.com/VanceCole/roofs",
   "manifest": "https://raw.githubusercontent.com/VanceCole/roofs/master/module.json",
-  "download": "https://github.com/VanceCole/roofs/releases/download/0.1.0/module.zip"
+  "download": "https://github.com/VanceCole/roofs/releases/download/0.1.0/module.zip",
+  "changelog": "https://github.com/VanceCole/roofs/blob/master/changelog.md"
 }
