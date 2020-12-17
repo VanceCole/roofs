@@ -24,9 +24,16 @@ Hooks.once('canvasInit', () => {
 /**
  *  Apply patches to core methods
  */
-Hooks.once('ready', () => {
+Hooks.once('init', () => {
   RoofsLayer._patchDrag();
   RoofsLayer._patchSight();
+});
+
+Hooks.once('ready', () => {
+  if (!game.modules.get("lib-wrapper")?.active && game.user.isGM)
+      ui.notifications.warn("The 'Roofs & Overhead Tiles' module recommends to install and activate the 'libWrapper' module.");
+
+  canvas.sight.update();
 });
 
 /**
