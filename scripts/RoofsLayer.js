@@ -276,19 +276,25 @@ export default class RoofsLayer extends CanvasLayer {
 
   static _patchSight() {
     if (game.data.version.startsWith('0.6')) {
-      const origUpdate = canvas.sight.update;
-      canvas.sight.update = function update(...args) {
-        origUpdate.call(this, ...args);
+      const update = function (wrapped, ...args) {
+        wrapped(...args);
         RoofsLayer._sightUpdate();
       };
+
+      if (game.modules.get("lib-wrapper")?.active) {
+        libWrapper.register("roofs", "SightLayer.prototype.update", update, "WRAPPER");
+      }
+      else {
+        const origUpdate = SightLayer.prototype.update;
+        SightLayer.prototype.update = function () {
+          return update.call(this, origUpdate.bind(this), ...arguments);
+        };
+      }
+
       canvas.sight.update();
     }
     else {
-      const origUpdate = canvas.sight.refresh;
-      canvas.sight.refresh = function refresh(...args) {
-        origUpdate.call(this, ...args);
-        RoofsLayer._sightUpdate();
-      };
+      Hooks.on("sightRefresh", () => RoofsLayer._sightUpdate());
       canvas.sight.refresh();
     }
   }
@@ -297,29 +303,47 @@ export default class RoofsLayer extends CanvasLayer {
    * Patch drag handlers to hide roofs during drag ops
    */
   static _patchDrag() {
-    // eslint-disable-next-line camelcase
-    const og_onDragLeftStart = Tile.prototype._onDragLeftStart;
-    Tile.prototype._onDragLeftStart = function _onDragLeftStart(event) {
+    const onDragLeftStart = function (wrapped, ...args) {
       const targets = this.layer.options.controllableObjects ? this.layer.controlled : [this];
       RoofsLayer.hide(targets);
-      og_onDragLeftStart.call(this, event);
+      wrapped(...args);
     };
 
-    // eslint-disable-next-line camelcase
-    const og_onDragLeftDrop = Tile.prototype._onDragLeftDrop;
-    Tile.prototype._onDragLeftDrop = function _onDragLeftDrop(event) {
+    const onDragLeftDrop = function (wrapped, ...args) {
       const targets = this.layer.options.controllableObjects ? this.layer.controlled : [this];
       RoofsLayer.show(targets);
-      og_onDragLeftDrop.call(this, event);
+      wrapped(...args);
     };
 
-    // eslint-disable-next-line camelcase
-    const og_onDragLeftCancel = Tile.prototype._onDragLeftCancel;
-    Tile.prototype._onDragLeftCancel = function _onDragLeftCancel(event) {
+    const onDragLeftCancel = function (wrapped, ...args) {
       const targets = this.layer.options.controllableObjects ? this.layer.controlled : [this];
       RoofsLayer.show(targets);
-      og_onDragLeftCancel.call(this, event);
+      wrapped(...args);
     };
+
+    if (game.modules.get("lib-wrapper")?.active) {
+      libWrapper.register("roofs", "Tile.prototype._onDragLeftStart", onDragLeftStart, "WRAPPER");
+      libWrapper.register("roofs", "Tile.prototype._onDragLeftDrop", onDragLeftDrop, "WRAPPER");
+      libWrapper.register("roofs", "Tile.prototype._onDragLeftCancel", onDragLeftCancel, "WRAPPER");
+    }
+    else {
+      // eslint-disable-next-line camelcase
+      const og_onDragLeftStart = Tile.prototype._onDragLeftStart;
+      Tile.prototype._onDragLeftStart = function () {
+        return onDragLeftStart.call(this, og_onDragLeftStart.bind(this), ...arguments);
+      }
+      // eslint-disable-next-line camelcase
+      const og_onDragLeftDrop = Tile.prototype._onDragLeftDrop;
+      Tile.prototype._onDragLeftDrop = function () {
+        return onDragLeftDrop.call(this, og_onDragLeftDrop.bind(this), ...arguments);
+      };
+      // eslint-disable-next-line camelcase
+      const og_onDragLeftCancel = Tile.prototype._onDragLeftCancel;
+      Tile.prototype._onDragLeftCancel = function () {
+        return onDragLeftCancel.call(this, og_onDragLeftCancel.bind(this), ...arguments);
+      };
+    }
+
   }
 
   /**
