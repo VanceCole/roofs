@@ -290,12 +290,9 @@ export default class RoofsLayer extends CanvasLayer {
           return update.call(this, origUpdate.bind(this), ...arguments);
         };
       }
-
-      canvas.sight.update();
     }
     else {
       Hooks.on("sightRefresh", () => RoofsLayer._sightUpdate());
-      canvas.sight.refresh();
     }
   }
 
